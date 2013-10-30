@@ -10,6 +10,9 @@
     border-radius: 15px;
     width:30px;
     height: 30px;
+    position: absolute;
+    top:0px;
+    z-index: 1;
 }
 .money.five{
     background-color: blue;
@@ -29,18 +32,23 @@
     width:800px;
     height: 600px;
     position: absolute;
+    overflow: hidden;
 }
 .key-box{
    width:580px;
    position: absolute;
    bottom:0px;
    margin-left: 110px;
+   z-index: 9999;
 }
 .key-box .key{
     width:98px;
     height: 40px;
     border:1px solid #000;
     float: left;
+    background-color: #fff;
+    text-align: center;
+    line-height: 40px;
 }
 </style>
 </head>
@@ -48,16 +56,162 @@
     <div class="money five"></div>
     <div class="game1218">
         <div class="game-box">
+            <div class="count-score">0</div>
             <div class="key-box">
-                <div class="key d" style="margin-right:60px"></div>
-                <div class="key f" style="margin-right:60px"></div>
-                <div class="key j" style="margin-right:60px"></div>
-                <div class="key k"></div>
+                <div class="key d" style="margin-right:60px">d</div>
+                <div class="key f" style="margin-right:60px">f</div>
+                <div class="key j" style="margin-right:60px">j</div>
+                <div class="key k">k</div>
             </div>
         </div>
     <div>
 </body>
 <script type="text/javascript">
+var items = [
+    {
+        "cls":"five",
+        "score":5
+    },
+    {
+        "cls":"ten",
+        "score":10
+    },    {
+        "cls":"fifteen",
+        "score":15
+    }
+]
+
+var speed = 2000;//item下落速度
+var createItemSpeed = 3;//秒生成10个item
+var difficulty = 1;//1:简单模式 2:困难模式 3:地狱模式 4:炼狱模式 
+var itemId = 0;
+var path1OffsetLeft = 145;
+var path2OffsetLeft = 305;
+var path3OffsetLeft = 465;
+var path4OffsetLeft = 625;
+var topS = 530;
+var topE = 600;
+var countScore = 0;
+var countScoreEl = $(".count-score");
+
+function randomCreateItem(){
+    return {
+        "id" : "item-id-"+(itemId++),
+        "item" : items[Math.floor(Math.random()*items.length)],
+        "isDouble" : Math.floor(Math.random()*10+1)==10 ? true : false,
+        "path" : Math.floor(Math.random()*4+1)
+    }
+}
+
+var running = null;
+function startGame(){
+    var i = 0;
+    running = setInterval(function(){
+        var item = randomCreateItem();
+        //console.log(item);
+        itemFall(item);
+        i++;
+        if(i==100){
+            clearInterval(running);
+        }
+    },1000/(createItemSpeed*difficulty));
+
+    var rules = [
+        {path:1,keycode:68,topS:530,topE:600},
+        {path:2,keycode:70,topS:530,topE:600},
+        {path:3,keycode:74,topS:530,topE:600},
+        {path:4,keycode:75,topS:530,topE:600}
+    ];
+    function isHit(el,keycode){
+        el = $(el);
+        var top = parseInt(el.css('top')),
+            isHit = false;
+        $(rules).each(function(i, rule){
+            if(keycode == rule.keycode && el.attr('data-path') == rule.path && top >= topS && top <= topE){
+                isHit = true;
+                return false;
+            }        
+        });
+        return isHit;
+
+    }
+
+    $(document).keyup(function(e){
+        e = e || window.event;
+        var keycode = e.which ? e.which : e.keyCode;
+        console.log(keycode);
+        if(countScore>2){
+            countScore = countScore - 2;
+            countScoreEl.text(countScore);
+        }
+
+        $(".game-box .money").each(function(i, el){
+            if(isHit(el,keycode)){
+                console.log(keycode+"-success");
+                if(keycode==68){
+                    $(".key.d").css("background-color","green");
+                    setTimeout(function(){
+                        $(".key.d").css("background-color","#fff");
+                    },200);
+                }else if(keycode==70){
+                    $(".key.f").css("background-color","green");
+                    setTimeout(function(){
+                        $(".key.f").css("background-color","#fff");
+                    },200);
+                }else if(keycode==74){
+                    $(".key.j").css("background-color","green");
+                    setTimeout(function(){
+                        $(".key.j").css("background-color","#fff");
+                    },200);
+                }else if(keycode==75){
+                    $(".key.k").css("background-color","green");
+                    setTimeout(function(){
+                        $(".key.k").css("background-color","#fff");
+                    },200);
+                }
+
+                countScore = countScore + parseInt($(el).attr('data-score'));
+
+                countScoreEl.text(countScore);
+            }
+        });
+    });
+}
+
+function itemFall(item){
+    var itemEl = $("<div id="+item.id+" class='money "+item.item.cls+"' data-score='"+item.item.score+"' data-isDouble='"+item.isDouble+"' data-path='"+item.path+"'>");
+    $(".game-box").append(itemEl);
+
+    initItem(itemEl,item.path);//把item初始化到起点位置
+
+    animateItem(itemEl);//控制item下落
+}
+function initItem(itemEl,path){
+    if(path==1){
+        itemEl.css("left",path1OffsetLeft+"px");
+    }else if(path==2){
+        itemEl.css("left",path2OffsetLeft+"px");
+    }else if(path==3){
+        itemEl.css("left",path3OffsetLeft+"px");
+    }else if(path==4){
+        itemEl.css("left",path4OffsetLeft+"px");
+    }
+}
+
+function animateItem(itemEl){
+    $(itemEl).animate({
+        top: (topE+1)+"px"
+    }, speed/difficulty, function() {
+        $(itemEl).remove();
+    });
+}
+
+function endGame(){
+
+}
+
+startGame();
+
 
 </script>
 </html>
